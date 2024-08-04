@@ -1,0 +1,76 @@
+USE mydb;
+SELECT 
+    od.*,
+    (SELECT o.customer_id 
+     FROM orders o 
+     WHERE o.id = od.order_id) AS customer_id
+FROM 
+    order_details od;
+
+USE mydb;
+SELECT 
+    od.*
+FROM 
+    order_details od
+WHERE 
+    od.order_id IN (SELECT o.id 
+                    FROM orders o 
+                    WHERE o.shipper_id = 3);
+
+USE mydb;
+SELECT 
+    subquery.order_id,
+    AVG(subquery.quantity) AS average_quantity
+FROM 
+    (SELECT 
+         od.order_id, 
+         od.quantity
+     FROM 
+         order_details od
+     WHERE 
+         od.quantity > 10) AS subquery
+GROUP BY 
+    subquery.order_id;
+
+USE mydb;
+WITH temp AS (
+    SELECT 
+        od.order_id, 
+        od.quantity
+    FROM 
+        order_details od
+    WHERE 
+        od.quantity > 10
+)
+SELECT 
+    temp.order_id,
+    AVG(temp.quantity) AS average_quantity
+FROM 
+    temp
+GROUP BY 
+    temp.order_id;
+
+USE mydb;
+DROP FUNCTION IF EXISTS divide;
+DELIMITER $$
+CREATE FUNCTION divide(
+    num1 FLOAT,
+    num2 FLOAT
+) RETURNS FLOAT
+DETERMINISTIC
+BEGIN
+    DECLARE result FLOAT;
+    IF num2 = 0 THEN
+        SET result = NULL;
+    ELSE
+        SET result = num1 / num2;
+    END IF;
+    RETURN result;
+END $$
+DELIMITER ;
+SELECT 
+    order_id, 
+    quantity, 
+    divide(quantity, 2.0) AS divided_quantity
+FROM 
+    order_details;
